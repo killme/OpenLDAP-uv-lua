@@ -159,14 +159,13 @@ LUA_EXPORT(int openldap_uv_lua_search(lua_State *L))
         luaL_checktype(L, 5, LUA_TTABLE);
         int size = lua_objlen(L, 5);
 
-        fieldSelector = malloc(sizeof(*fieldSelector) * size + 1);
+        fieldSelector = malloc(sizeof(*fieldSelector) * (size + 1));
 
-        lua_pushvalue(L, 5);
         lua_pushnil(L);
 
-        for(int i = 0; lua_next(L, -2); i++)
+        for(int i = 0; lua_next(L, 5); i++)
         {
-            fieldSelector[i] = (char *)luaL_checkstring(L, -1);
+            fieldSelector[i] = (char *)lua_tostring(L, -1);
             fieldSelector[i+1] = 0;
             lua_pop(L, 1);
         }
@@ -199,6 +198,7 @@ LUA_EXPORT(int openldap_uv_lua_search(lua_State *L))
         BerElement *ber;
         char *attr = ldap_first_attribute(ldap->ldap, entry, &ber);
 
+        int j = 0;
         while(attr)
         {
             struct berval **vals = ldap_get_values_len(ldap->ldap, entry, attr );
@@ -207,19 +207,19 @@ LUA_EXPORT(int openldap_uv_lua_search(lua_State *L))
             {
                 for(int i = 0; vals[i]; i++)
                 {
-                    lua_pushnumber(L, i + 1);
+                    lua_pushnumber(L, ++j);
 
                     lua_newtable(L);
 
                     lua_pushnumber(L, 1);
                     lua_pushstring(L, attr);
-                    lua_settable(L, -3);
+                    lua_rawset(L, -3);
 
                     lua_pushnumber(L, 2);
                     lua_pushlstring(L, vals[i]->bv_val, vals[i]->bv_len);
-                    lua_settable(L, -3);
+                    lua_rawset(L, -3);
 
-                    lua_settable(L, -3);
+                    lua_rawset(L, -3);
                 }
 
                 ldap_value_free_len( vals );
@@ -230,7 +230,7 @@ LUA_EXPORT(int openldap_uv_lua_search(lua_State *L))
             attr = ldap_next_attribute( ldap->ldap, entry, ber);
         }
 
-        lua_settable(L, -3);
+        lua_rawset(L, -3);
 
         entry = ldap_next_entry(ldap->ldap, entry);
     }

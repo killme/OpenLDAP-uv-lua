@@ -12,4 +12,4 @@ p("connection", con)
 
 con:bind(conf.dn, conf.password)
 
-p(con:search("dc=example,dc=com", "LDAP_SCOPE_CHILDREN", nil, nil, false))
+p(con:search("dc=example,dc=com", "LDAP_SCOPE_CHILDREN", nil, {"memberOf", "cn"}, false))
